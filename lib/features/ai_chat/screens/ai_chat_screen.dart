@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../../../core/theme.dart';
+import '../../../core/api_keys.dart';
 
 class AIChatScreen extends StatefulWidget {
   const AIChatScreen({super.key});
@@ -13,21 +16,69 @@ class _AIChatScreenState extends State<AIChatScreen> {
     ChatMessage(text: "Hello! I'm your Health Assistant. How can I help you today?", isUser: false),
   ];
   final TextEditingController _controller = TextEditingController();
+  bool _isLoading = false;
 
-  void _sendMessage() {
-    if (_controller.text.isEmpty) return;
+  Future<void> _sendMessage() async {
+    if (_controller.text.isEmpty || _isLoading) return;
+    
+    final userMessage = _controller.text;
     setState(() {
-      _messages.add(ChatMessage(text: _controller.text, isUser: true));
+      _messages.add(ChatMessage(text: userMessage, isUser: true));
       _controller.clear();
+      _isLoading = true;
     });
-    // Simulate AI response
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
+
+    try {
+      final response = await http.post(
+        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${ApiKeys.geminiKey}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'contents': [
+            {
+              'parts': [
+                {'text': 'You are a helpful and knowledgeable health assistant for an app called VitaAI. Provide concise and accurate health, nutrition, and fitness advice.'},
+                {'text': userMessage},
+              ],
+            }
+          ],
+        }),
+      );
+/*
+      final response = await http.post(
+        Uri.parse('https://api.openai.com/v1/chat/completions'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${ApiKeys.openAiKey}',
+        },
+        body: jsonEncode({
+          'model': 'gpt-3.5-turbo',
+          'messages': [
+            {'role': 'system', 'content': 'You are a helpful and knowledgeable health assistant for an app called VitaAI. Provide concise and accurate health, nutrition, and fitness advice.'},
+            {'role': 'user', 'content': userMessage},
+          ],
+        }),
+      );
+*/
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final aiMessage = data['candidates'][0]['content']['parts'][0]['text'];
         setState(() {
-          _messages.add(ChatMessage(text: "That's a great question! Based on your profile, I recommend focusing on high-protein snacks today.", isUser: false));
+          _messages.add(ChatMessage(text: aiMessage.trim(), isUser: false));
+        });
+      } else {
+        setState(() {
+          _messages.add(ChatMessage(text: "Sorry, I'm having trouble connecting right now. Please try again later.", isUser: false));
         });
       }
-    });
+    } catch (e) {
+      setState(() {
+        _messages.add(ChatMessage(text: "Error: $e", isUser: false));
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -39,8 +90,19 @@ class _AIChatScreenState extends State<AIChatScreen> {
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) => _messages[index],
+              itemCount: _messages.length + (_isLoading ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == _messages.length && _isLoading) {
+                  return const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  );
+                }
+                return _messages[index];
+              },
             ),
           ),
           _buildQuickReplies(),
@@ -92,8 +154,11 @@ class _AIChatScreenState extends State<AIChatScreen> {
           ),
           const SizedBox(width: 8),
           IconButton(
-            onPressed: _sendMessage,
-            icon: const Icon(Icons.send_rounded, color: AppColors.primary),
+            onPressed: _isLoading ? null : _sendMessage,
+            icon: Icon(
+              Icons.send_rounded, 
+              color: _isLoading ? Colors.grey : AppColors.primary
+            ),
           ),
         ],
       ),
@@ -115,11 +180,16 @@ class ChatMessage extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
         decoration: BoxDecoration(
-          color: isUser ? AppColors.primary : Colors.grey[200],
-          borderRadius: BorderRadius.circular(16).copyWith(
-            bottomRight: isUser ? const Radius.circular(0) : const Radius.circular(16),
-            bottomLeft: isUser ? const Radius.circular(16) : const Radius.circular(0),
+          color: isUser ? null : Colors.white,
+          gradient: isUser ? AppColors.primaryGradient : null,
+          borderRadius: BorderRadius.circular(20).copyWith(
+            bottomRight: isUser ? const Radius.circular(0) : const Radius.circular(20),
+            bottomLeft: isUser ? const Radius.circular(20) : const Radius.circular(0),
           ),
+          boxShadow: [
+            if (!isUser) BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2)),
+          ],
+          border: isUser ? null : Border.all(color: Colors.grey.shade200),
         ),
         child: Text(
           text,

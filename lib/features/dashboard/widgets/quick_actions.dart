@@ -33,6 +33,12 @@ class QuickActionsGrid extends StatelessWidget {
           () => Navigator.pushNamed(context, '/professionals'),
         ),
         _buildActionCard(
+          'Analyze Report',
+          Icons.analytics_outlined,
+          Colors.deepPurple,
+          () => Navigator.pushNamed(context, '/analyze-report'),
+        ),
+        _buildActionCard(
           'Demo Call',
           Icons.videocam_outlined,
           AppColors.error,

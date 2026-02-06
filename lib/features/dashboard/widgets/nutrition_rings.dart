@@ -1,44 +1,108 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme.dart';
+import 'package:health_ai/services/health_service.dart';
 
-class NutritionRings extends StatelessWidget {
+class NutritionRings extends StatefulWidget {
   const NutritionRings({super.key});
 
   @override
+  State<NutritionRings> createState() => _NutritionRingsState();
+}
+
+class _NutritionRingsState extends State<NutritionRings> {
+  final HealthService _healthService = HealthService();
+
+  @override
+  void initState() {
+    super.initState();
+    _healthService.addListener(_update);
+  }
+
+  @override
+  void dispose() {
+    _healthService.removeListener(_update);
+    super.dispose();
+  }
+
+  void _update() => setState(() {});
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    final data = _healthService.currentData;
+    
+    return InkWell(
+      onTap: () => Navigator.pushNamed(context, '/ai-chat'),
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Nutrition Summary', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text('${data.calories.toInt()} / 2,000 kcal', style: const TextStyle(color: AppColors.textLight)),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildRing(data.protein / 80, 'Protein', AppColors.primary, '${data.protein.toInt()}/80g'),
+                _buildRing(data.carbs / 250, 'Carbs', AppColors.accent, '${data.carbs.toInt()}/250g'),
+                _buildRing(data.fats / 65, 'Fats', AppColors.secondary, '${data.fats.toInt()}/65g'),
+              ],
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Divider(),
+            ),
+            Row(
+              children: [
+                Expanded(child: _buildLinearStat(Icons.directions_walk_rounded, 'Steps', '${data.steps} / 10k', data.steps / 10000, Colors.blue)),
+                const SizedBox(width: 24),
+                Expanded(child: _buildLinearStat(Icons.local_drink_rounded, 'Water', '${data.water.toStringAsFixed(1)} / 3.0 L', data.water / 3.0, Colors.cyan)),
+              ],
+            ),
+          ],
+        ),
       ),
-      child: Column(
-        children: [
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Nutrition Summary', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              Text('1,240 / 2,000 kcal', style: TextStyle(color: AppColors.textLight)),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildRing(0.6, 'Protein', AppColors.primary, '45/80g'),
-              _buildRing(0.4, 'Carbs', AppColors.accent, '120/250g'),
-              _buildRing(0.8, 'Fats', AppColors.secondary, '50/65g'),
-            ],
-          ),
-        ],
-      ),
+    );
+  }
+
+  Widget _buildLinearStat(IconData icon, String label, String value, double progress, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 8),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value: progress,
+          backgroundColor: color.withOpacity(0.1),
+          valueColor: AlwaysStoppedAnimation<Color>(color),
+          borderRadius: BorderRadius.circular(4),
+          minHeight: 6,
+        ),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(fontSize: 11, color: AppColors.textLight)),
+      ],
     );
   }
 

@@ -3,9 +3,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
 
-  // Google Sign In
+  // Google Sign In - Updated for google_sign_in v7+
   Future<UserCredential?> signInWithGoogle() async {
     try {
       // Trigger the authentication flow

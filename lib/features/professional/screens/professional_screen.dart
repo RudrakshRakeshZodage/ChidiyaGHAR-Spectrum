@@ -66,15 +66,34 @@ class ProfessionalConnectScreen extends StatelessWidget {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: BorderSide(color: AppColors.primary.withOpacity(0.5)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                   child: const Text('Book Session'),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pushNamed(context, '/demo-call'),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary),
-                  child: const Text('2-Min Demo'),
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4)),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pushNamed(context, '/demo-call'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: const Text('2-Min Demo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
                 ),
               ),
             ],
